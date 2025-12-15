@@ -3,6 +3,10 @@ use std::fs;
 use advent_of_code::day1_door_code;
 
 fn main() {
+    day1();
+}
+
+fn day1() {
     let file_path = "./inputs/day1.input";
     let Ok(input) = fs::read_to_string(file_path) else {
         panic!("Failed to read {} file", file_path)
