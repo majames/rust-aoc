@@ -2,6 +2,8 @@
 
 use std::fs;
 
+use log::info;
+
 const FILE_PATH: &str = "./inputs/day2.input";
 
 #[derive(Debug)]
@@ -29,9 +31,9 @@ pub fn day2() -> Result<u64, String> {
     return Ok(sum_invalid_ids(id_ranges));
 }
 
-// O(R * L) runtime
-//   - R = number of ranges
-//   - L = range length
+// O(R * L * N^2)
+//  R - number of ranges
+//  L - length of range
 fn sum_invalid_ids(id_ranges: Vec<Range>) -> u64 {
     let mut sum = 0;
 
@@ -46,26 +48,34 @@ fn sum_invalid_ids(id_ranges: Vec<Range>) -> u64 {
     return sum;
 }
 
-// O(1) runtime
+// O(N^2) runtime, N is number length
 fn is_valid_id(id: u64) -> bool {
-    let num_len = id.to_string().len();
-    let base: u64 = 10;
+    let chars: Vec<char> = id.to_string().chars().collect();
+    let num_len = chars.len();
 
-    if is_odd(num_len) {
-        // if ID length is odd it can never be repeated
-        return true;
+    for window_size in 1..=(num_len / 2) {
+        // the window size must divide evenly into the numbers length
+        if num_len % window_size != 0 {
+            continue;
+        }
+
+        let mut is_valid = false;
+        let test = &chars[0..window_size];
+
+        for i in (window_size..=(num_len - window_size)).step_by(window_size) {
+            if test != &chars[i..(i + window_size)] {
+                is_valid = true;
+                break;
+            }
+        }
+
+        if !is_valid {
+            info!("'{}' ID is invalid", id);
+            return false;
+        }
     }
 
-    // split number into "back" and "front" halves
-    let factor = base.pow((num_len / 2) as u32);
-    let back = id % factor;
-    let front = id / factor;
-
-    return front != back;
-}
-
-fn is_odd(num: usize) -> bool {
-    return num % 2 == 1;
+    return true;
 }
 
 fn parse_ids(line: &str) -> Result<Vec<Range>, String> {
@@ -105,6 +115,51 @@ mod tests {
     }
 
     #[test]
+    fn returns_expected_result_for_one_range_1() {
+        let input = "11-22";
+        let Ok(id_ranges) = parse_ids(input) else {
+            panic!("Failed to parse test IDs");
+        };
+
+        assert_eq!(id_ranges.len(), 1, "expected number of ID ranges");
+        assert_eq!(
+            sum_invalid_ids(id_ranges),
+            33,
+            "expected sum of invalid IDs"
+        );
+    }
+
+    #[test]
+    fn returns_expected_result_for_one_range_2() {
+        let input = "998-1012";
+        let Ok(id_ranges) = parse_ids(input) else {
+            panic!("Failed to parse test IDs");
+        };
+
+        assert_eq!(id_ranges.len(), 1, "expected number of ID ranges");
+        assert_eq!(
+            sum_invalid_ids(id_ranges),
+            2009,
+            "expected sum of invalid IDs"
+        );
+    }
+
+    #[test]
+    fn returns_expected_result_for_one_range_3() {
+        let input = "2121212118-2121212124";
+        let Ok(id_ranges) = parse_ids(input) else {
+            panic!("Failed to parse test IDs");
+        };
+
+        assert_eq!(id_ranges.len(), 1, "expected number of ID ranges");
+        assert_eq!(
+            sum_invalid_ids(id_ranges),
+            2121212121,
+            "expected sum of invalid IDs"
+        );
+    }
+
+    #[test]
     fn returns_expected_result() {
         let input = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
         let Ok(id_ranges) = parse_ids(input) else {
@@ -114,7 +169,7 @@ mod tests {
         assert_eq!(id_ranges.len(), 11, "expected number of ID ranges");
         assert_eq!(
             sum_invalid_ids(id_ranges),
-            1227775554,
+            4174379265,
             "expected sum of invalid IDs"
         );
     }

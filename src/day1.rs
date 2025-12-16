@@ -15,7 +15,7 @@ struct Turn {
     distance: u16,
 }
 
-pub fn day1() {
+pub fn day1() -> Result<u16, String> {
     let file_path = "./inputs/day1.input";
     let Ok(input) = fs::read_to_string(file_path) else {
         panic!("Failed to read {} file", file_path)
@@ -27,8 +27,7 @@ pub fn day1() {
         .map(|s| s.trim())
         .collect();
 
-    let result = door_code(lock_turns);
-    println!("The code is: {:?}", result);
+    return door_code(lock_turns);
 }
 
 fn door_code(lock_turns: Vec<&str>) -> Result<u16, String> {
